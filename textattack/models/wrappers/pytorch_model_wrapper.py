@@ -8,6 +8,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 
 import textattack
+from textattack.models.tokenizers.t5_tokenizer import T5Tokenizer
 
 from .model_wrapper import ModelWrapper
 
@@ -38,7 +39,10 @@ class PyTorchModelWrapper(ModelWrapper):
     def __call__(self, text_input_list, batch_size=32):
         model_device = next(self.model.parameters()).device
         ids = self.tokenizer(text_input_list)
-        ids = torch.tensor(ids).to(model_device)
+        if isinstance(self.tokenizer, T5Tokenizer):
+            ids = torch.tensor(ids["input_ids"]).to(model_device)
+        else:
+            ids = torch.tensor(ids).to(model_device)
 
         with torch.no_grad():
             outputs = textattack.shared.utils.batch_model_predict(
